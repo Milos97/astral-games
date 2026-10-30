@@ -1,5 +1,7 @@
 # Astral Games — a PixiJS v8 iGaming showcase
 
+[![CI](https://github.com/Milos97/astral-games/actions/workflows/ci.yml/badge.svg)](https://github.com/Milos97/astral-games/actions/workflows/ci.yml)
+
 Two games on one client framework, with a mock remote game server (RGS):
 
 - **Astral Tumble**: a 6×5 "pay anywhere" cascading slot. Tumble multipliers, scatter anticipation, free spins with a persistent multiplier, and escalating big-win sequences.
