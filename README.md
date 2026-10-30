@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Milos97/astral-games/actions/workflows/ci.yml/badge.svg)](https://github.com/Milos97/astral-games/actions/workflows/ci.yml)
 
+**▶ Live demo: [milos97.github.io/astral-games](https://milos97.github.io/astral-games/)** · jump straight in: [slot](https://milos97.github.io/astral-games/?game=slot) · [Plinko](https://milos97.github.io/astral-games/?game=plinko)
+
 Two games on one client framework, with a mock remote game server (RGS):
 
 - **Astral Tumble**: a 6×5 "pay anywhere" cascading slot. Tumble multipliers, scatter anticipation, free spins with a persistent multiplier, and escalating big-win sequences.
