@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#05020f" />
+    <title>Astral Games</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #05020f; overflow: hidden; touch-action: none; overscroll-behavior: none; }
+      body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      #app canvas { display: block; }
+      #boot {
+        position: fixed; inset: 0; display: grid; place-items: center; z-index: 5;
+        font-family: Fredoka, system-ui, sans-serif; color: #eae6ff; background: radial-gradient(circle at 50% 40%, #2a1060, #05020f 70%);
+        transition: opacity 400ms ease;
+      }
+      #boot .box { width: min(70vw, 420px); text-align: center; }
+      #boot h1 { font-size: clamp(28px, 6vw, 48px); margin: 0 0 24px; letter-spacing: 3px; color: #ffd84a; text-shadow: 0 3px 0 #4a0f5a; }
+      #boot .bar { height: 10px; border-radius: 6px; background: #1a0f3a; overflow: hidden; border: 1px solid #5a3fa8; }
+      #boot .fill { height: 100%; width: 0; background: linear-gradient(90deg, #3fd8ff, #ff4fb8); transition: width 200ms ease; }
+      #boot .msg { margin-top: 12px; font-size: 14px; color: #9c94c9; letter-spacing: 1px; }
+    </style>
+  </head>
+  <body>
+    <div id="boot">
+      <div class="box">
+        <h1>ASTRAL GAMES</h1>
+        <div class="bar"><div class="fill"></div></div>
+        <div class="msg">loading</div>
+      </div>
+    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
