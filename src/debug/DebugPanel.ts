@@ -46,6 +46,7 @@ export class DebugPanel {
   private histEl!: HTMLDivElement;
   private forceEl!: HTMLDivElement;
   private roundsEl!: HTMLDivElement;
+  private eventsEl!: HTMLDivElement;
   private armed: string | null = null;
   private latency = 'normal';
 
@@ -87,6 +88,10 @@ export class DebugPanel {
       <h3>State machine</h3><div class="state"></div><div class="hist"></div>
       <h3>Force next outcome</h3><div class="force"></div>
       <h3>Rounds <button data-act="refresh">refresh</button></h3><div class="rounds"></div>
+      <h3>Gamification</h3>
+      <div><button data-act="xp">+150 XP</button><button data-act="gami-reset">reset progress</button></div>
+      <div class="muted">event bus (RGS → gamification service), newest first:</div>
+      <div class="events hist"></div>
       <h3>Network</h3>
       <div>
         <select data-act="latency">${Object.keys(LATENCY).map((k) => `<option ${k === this.latency ? 'selected' : ''}>${k}</option>`).join('')}</select>
@@ -111,6 +116,9 @@ export class DebugPanel {
     this.histEl = this.el.querySelector('.hist')!;
     this.forceEl = this.el.querySelector('.force')!;
     this.roundsEl = this.el.querySelector('.rounds')!;
+    this.eventsEl = this.el.querySelector('.events')!;
+    this.app.gami.on('log', () => this.renderEvents());
+    this.renderEvents();
 
     this.el.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
@@ -164,11 +172,26 @@ export class DebugPanel {
         }
         break;
       }
+      case 'xp':
+        await app.server.call('gami.grant', { xp: 150 });
+        break;
+      case 'gami-reset':
+        await app.server.call('gami.reset', {});
+        location.reload();
+        break;
       case 'reset':
         await app.server.call('wallet.reset', {});
         location.reload();
         break;
     }
+  }
+
+  private renderEvents() {
+    const rows = this.app.gami.log.slice(0, 12).map(({ event: e, xp, completed }) => {
+      const x = e.bet ? (e.win / e.bet).toFixed(1) : '0';
+      return `#${String(e.seq).padStart(3)} ${e.game.padEnd(6)} ${e.mode.padEnd(6)} ${x.padStart(6)}x  +${xp}xp${completed ? `  ✓${completed}` : ''}`;
+    });
+    this.eventsEl.textContent = rows.join('\n') || 'no events yet';
   }
 
   private renderForces() {

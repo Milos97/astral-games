@@ -5,6 +5,7 @@
  */
 import type { SlotMathResult, SlotMode } from '../games/slot/math/engine';
 import type { PlinkoMathResult, Risk } from '../games/plinko/math/engine';
+import type { GamiUpdate, GamiView, RoundEvent } from '../gamification/engine';
 
 /** Amounts are integer cents everywhere. */
 export type Cents = number;
@@ -57,6 +58,7 @@ export interface SessionInfo {
   betLevels: Cents[];
   slot: { fs: FsState | null; pending: SlotRound | null };
   history: HistoryEntry[];
+  gami: GamiView;
 }
 
 export interface Api {
@@ -70,6 +72,8 @@ export interface Api {
   };
   'wallet.set': { params: { balance: Cents }; result: { balance: Cents } };
   'wallet.reset': { params: Record<string, never>; result: SessionInfo };
+  'gami.grant': { params: { xp: number }; result: GamiView };
+  'gami.reset': { params: Record<string, never>; result: GamiView };
 }
 export type Method = keyof Api;
 
@@ -85,4 +89,6 @@ export type ErrorCode = 'INSUFFICIENT_FUNDS' | 'BAD_REQUEST' | 'NETWORK' | 'NOT_
 export type FromWorker =
   | { kind: 'res'; id: number; ok: true; result: unknown }
   | { kind: 'res'; id: number; ok: false; error: { code: ErrorCode; message: string } }
-  | { kind: 'persist'; state: unknown };
+  | { kind: 'persist'; state: unknown }
+  /** Server push: the gamification service processed a round event. */
+  | { kind: 'gami'; event: RoundEvent | null; update: GamiUpdate };

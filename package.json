@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "sim": "tsx scripts/simulate.ts",
-    "test": "tsx scripts/test-math.ts"
+    "test": "tsx scripts/test-math.ts && tsx scripts/test-gamification.ts"
   },
   "dependencies": {
     "pixi.js": "^8.22.0"

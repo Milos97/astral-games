@@ -318,6 +318,7 @@ export class SlotScene implements Scene {
       this.fsm.go('bigWin');
       await this.bigWin.play(round.win, round.bet, TIERS, round.capped);
     }
+    this.app.gami.reveal(round.roundId);
     if (round.mode === 'base' && round.fsAfter && round.scatter.freeSpins > 0) {
       await this.runFreeSpins(round.fsAfter, false);
       return;
@@ -351,6 +352,7 @@ export class SlotScene implements Scene {
       first = undefined;
       await out;
       await this.present(round);
+      this.app.gami.reveal(round.roundId);
       last = round;
       state = round.fsAfter ?? state;
       this.fsCounter.set(state.total - state.remaining, state.total);

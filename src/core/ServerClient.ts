@@ -1,5 +1,6 @@
 import { Emitter } from './Emitter';
 import type { Api, ErrorCode, FromWorker, Method, NetFault, ToWorker } from '../shared/protocol';
+import type { GamiUpdate, RoundEvent } from '../gamification/engine';
 
 const STORAGE_KEY = 'astral.rgs.v1';
 const TIMEOUT_MS = 3000;
@@ -22,7 +23,7 @@ export type NetStatus = { kind: 'retrying'; attempt: number; method: Method } | 
  * requestId, so the server's idempotency cache guarantees a bet is only
  * ever taken once.
  */
-export class ServerClient extends Emitter<{ net: [NetStatus] }> {
+export class ServerClient extends Emitter<{ net: [NetStatus]; gami: [update: GamiUpdate, event: RoundEvent | null] }> {
   private worker: Worker;
   private seq = 0;
   private inflight = new Map<number, { resolve: (v: unknown) => void; reject: (e: ServerError) => void }>();
@@ -99,6 +100,10 @@ export class ServerClient extends Emitter<{ net: [NetStatus] }> {
       } catch {
         /* quota / private mode: the session just won't survive a reload */
       }
+      return;
+    }
+    if (msg.kind === 'gami') {
+      this.emit('gami', msg.update, msg.event);
       return;
     }
     const p = this.inflight.get(msg.id);

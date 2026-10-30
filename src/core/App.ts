@@ -8,6 +8,8 @@ import type { StateMachine } from './StateMachine';
 import { Tweens } from './Tweens';
 import { Background } from '../fx/Background';
 import { Toasts, type ToastKind } from '../ui/Toasts';
+import { Gami } from '../gamification/client/Gami';
+import { GamiWidget } from '../gamification/client/GamiWidget';
 import type { SessionInfo } from '../shared/protocol';
 
 export type Orientation = 'landscape' | 'portrait';
@@ -59,6 +61,8 @@ export class App {
   atlas!: Atlas;
   session!: SessionInfo;
   background!: Background;
+  gami!: Gami;
+  private gamiWidget!: GamiWidget;
   layout!: Layout;
   scene: Scene | null = null;
   sceneId: SceneId | null = null;
@@ -96,6 +100,9 @@ export class App {
     sfx.muted = !prefs.sound;
     this.session = await this.server.call('session.init', {});
     i18n.currency = this.session.currency;
+    this.gami = new Gami(this.server, this.session.gami);
+    this.gamiWidget = new GamiWidget(this);
+    this.world.addChildAt(this.gamiWidget, this.world.getChildIndex(this.toasts));
 
     this.server.on('net', (s) => {
       if (s.kind === 'retrying') this.toast(t('reconnecting', { n: s.attempt }), 'warn', 1400);
@@ -124,6 +131,7 @@ export class App {
     this.sceneId = id;
     this.scene_layer.addChild(this.scene.root);
     this.scene.layout(this.layout);
+    this.gamiWidget.layout(this.layout, id);
     this.emitSceneChange?.(id);
   }
 
@@ -162,6 +170,7 @@ export class App {
     this.background.resize(sw, sh);
     this.toasts.position.set(dw / 2, 120);
     this.scene?.layout(this.layout);
+    this.gamiWidget.layout(this.layout, this.sceneId);
   }
 
   private tick(dtMs: number) {
@@ -171,6 +180,7 @@ export class App {
     this.tweens.tick(dt);
     this.background.update(dt);
     this.scene?.update(dt);
+    this.gamiWidget.update(dt);
 
     const l = this.layout;
     const baseX = (l.screenW - l.width * l.scale) / 2;

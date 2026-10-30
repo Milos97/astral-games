@@ -352,6 +352,7 @@ export class PlinkoScene implements Scene {
       void this.playBigWins();
     }
     ball.sprite.destroy();
+    this.app.gami.reveal(round.roundId);
   }
 
   private async playBigWins() {

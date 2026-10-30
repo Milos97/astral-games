@@ -4,13 +4,14 @@ Two games on one client framework, with a mock remote game server (RGS):
 
 - **Astral Tumble**: a 6×5 "pay anywhere" cascading slot. Tumble multipliers, scatter anticipation, free spins with a persistent multiplier, and escalating big-win sequences.
 - **Plinko**: concurrent balls with three risk tables. It reuses the same HUD, server client, atlas, particles, big-win overlay and state machine.
+- **Gamification layer**: levels, XP, missions and loyalty stars that sit *on top of* both games, driven by an event stream from the game server. It never touches the odds.
 
 There are no image or audio assets. Every texture is drawn procedurally into a single atlas at boot, and every sound is synthesised with WebAudio.
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173  (?game=slot or ?game=plinko to skip the lobby)
-npm test           # math invariants: 50k slot rounds + 10k plinko drops
+npm test           # math invariants (50k slot rounds + 10k plinko drops) + gamification engine
 npm run sim        # Monte-Carlo RTP report (2M spins, ~5s)
 npm run build      # typecheck + production bundle (~123 KB gzip main chunk)
 ```
@@ -30,6 +31,7 @@ src/
   fx/            Particles (ParticleContainer), shaders, Background
   ui/            Hud, Button, Overlay, BigWin, Toasts, text/BitmapFont helpers
   games/*/client presentation only: SlotScene, Grid, PlinkoScene, ...
+  gamification/  engine.ts (pure XP / level / mission rules), client/ (Gami controller, PixiJS widget)
   debug/         QA panel (DOM)
 ```
 
@@ -109,6 +111,24 @@ The math is **illustrative**: tuned with the simulator, not certified. The payta
 - Turbo mode, sound toggle, a session timer and clock in the top bar.
 - Localised text and currency through `Intl` (EN/ES).
 - Low-quality mode: no nebula shader, no dissolve shader, fewer particles, 1× resolution.
+
+## Gamification layer
+
+A small engagement service, modelled on how a B2B gamification product plugs into an existing casino. The games don't know it exists: they only tell it when a round has *finished animating*.
+
+```
+RGS (settles round) ──publish(RoundEvent)──> gamification engine ──push(GamiUpdate)──> client
+                                                                                         │ held until the game
+game scene ──────────────── gami.reveal(roundId) after its presentation ───────────────>─┘ calls reveal()
+```
+
+- **Event-driven:** the RGS publishes a `RoundEvent` for every settled paid round (game, bet, win, mode, tumbles, free spins). The engine is a pure fold over that stream (`applyEvent(state, event) → { state, update }`), so it is deterministic and easy to test. In production the bus would be a queue such as Kafka; here it's one function inside the worker.
+- **Exactly-once:** events carry a sequence number and the engine ignores duplicates. Because the event is published inside the idempotent request handler, a retried spin (the lost-response test in the QA panel) never awards XP twice.
+- **No spoilers:** the server pushes progress as soon as a round settles, which is before the reels have even landed. The client holds each update until the game calls `reveal(roundId)` at the end of its presentation. Older updates are flushed first, so concurrent Plinko balls can't make the view jump backwards.
+- **Never touches RTP:** the engine never reads or writes the wallet, RNG or math. XP is earned per paid round, not per euro staked, so a bigger bet never levels you up faster, and no mission requires a minimum bet.
+- **Data-driven missions:** missions are config (`metric`, `target`, `filter`, `reward`), the way an operator would set them up: "play 10 spins", "play both games", "land a 10× win", "trigger free spins", "win €50 in total" and so on. Completed missions are replaced from the pool.
+- **PixiJS widget:** a level / XP ring / stars pill, a missions panel, progress "peeks" while you play (on completion or at the halfway mark, so autoplay isn't noisy), stars that fly into the counter, and a level-up banner. It runs on its **own tween clock**, so a game's slam-stop or turbo never skips its animations. When autoplay outpaces the animations, routine updates are applied instantly and only completions and level-ups play in full.
+- **QA:** the dev panel shows the live event bus, can grant XP to demo a level-up, and can reset progress.
 
 ## Known limitations
 

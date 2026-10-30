@@ -15,6 +15,7 @@ import { playRound, type SlotMathResult } from '../games/slot/math/engine';
 import { BIG_WIN_TIERS } from '../games/slot/math/config';
 import { dropBall, RISKS, type PlinkoMathResult } from '../games/plinko/math/engine';
 import { randomSeed } from '../shared/rng';
+import { applyEvent, grantXp, initialState, view, type GamiState, type RoundEvent } from '../gamification/engine';
 import type {
   Api,
   ErrorCode,
@@ -40,9 +41,21 @@ interface State {
   pending: SlotRound | null;
   history: HistoryEntry[];
   responses: { requestId: string; result: unknown }[];
+  /** Owned by the gamification service, not the RGS: see publish(). */
+  gami: GamiState;
+  eventSeq: number;
 }
 
-const fresh = (): State => ({ balance: START_BALANCE, nonce: 0, fs: null, pending: null, history: [], responses: [] });
+const fresh = (): State => ({
+  balance: START_BALANCE,
+  nonce: 0,
+  fs: null,
+  pending: null,
+  history: [],
+  responses: [],
+  gami: initialState(),
+  eventSeq: 0,
+});
 
 let state: State = fresh();
 let latency: [number, number] = [120, 320];
@@ -67,6 +80,20 @@ function remember(requestId: string, result: unknown) {
   if (state.responses.length > 20) state.responses.shift();
 }
 const recall = (requestId: string) => state.responses.find((r) => r.requestId === requestId)?.result;
+
+/**
+ * The event bus. In production the RGS would publish settled rounds to a
+ * queue (Kafka, SQS...) and the gamification service would consume it on
+ * its own infrastructure; here both live in this worker but only talk
+ * through this function. The push carries the roundId so the client can
+ * hold it back until that round has finished animating (no spoilers).
+ */
+function publish(e: Omit<RoundEvent, 'type' | 'seq' | 'time'>) {
+  const event: RoundEvent = { type: 'round', seq: ++state.eventSeq, time: Date.now(), ...e };
+  const { state: next, update } = applyEvent(state.gami, event);
+  state.gami = next;
+  if (update) post({ kind: 'gami', event, update });
+}
 
 function record(entry: HistoryEntry) {
   state.history.unshift(entry);
@@ -171,6 +198,7 @@ function slotSpin(p: Api['slot.spin']['params']): SlotRound {
     win,
     time: Date.now(),
   });
+  publish({ roundId: round.roundId, game: 'slot', bet, win, mode, tumbles: math.steps.length, freeSpinsAwarded: math.scatter.freeSpins });
   return round;
 }
 
@@ -217,6 +245,7 @@ function plinkoDrop(p: Api['plinko.drop']['params']) {
     win,
     time: Date.now(),
   });
+  publish({ roundId: round.roundId, game: 'plinko', bet: p.bet, win, mode: p.risk, tumbles: 0, freeSpinsAwarded: 0 });
   return round;
 }
 
@@ -227,6 +256,7 @@ function sessionInfo(): SessionInfo {
     betLevels: BET_LEVELS,
     slot: { fs: state.fs, pending: state.pending },
     history: state.history,
+    gami: view(state.gami),
   };
 }
 
@@ -247,6 +277,16 @@ const handlers: { [M in Method]: Handler<M> } = {
   'wallet.reset': () => {
     state = fresh();
     return sessionInfo();
+  },
+  'gami.grant': (p) => {
+    const { state: next, update } = grantXp(state.gami, p.xp);
+    state.gami = next;
+    post({ kind: 'gami', event: null, update });
+    return update.view;
+  },
+  'gami.reset': () => {
+    state.gami = initialState();
+    return view(state.gami);
   },
 };
 

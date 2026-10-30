@@ -57,6 +57,19 @@ const en = {
   high: 'HIGH',
   drop: 'DROP',
   loading: 'Loading {name}…',
+  level: 'LEVEL',
+  levelUp: 'LEVEL {n}!',
+  missions: 'MISSIONS',
+  missionComplete: 'COMPLETE!',
+  gamiNote: 'Missions never change the odds or RTP.',
+  mSpins: 'Play {n} slot spins',
+  mBoth: 'Play both games',
+  mWinX: 'Land a 10× win or better',
+  mDrops: 'Drop {n} Plinko balls',
+  mTumbles: 'Get 4+ tumbles in a spin, {n} times',
+  mFreeSpins: 'Trigger free spins',
+  mWinSum: 'Win {n} in total',
+  mPlinkoHigh: 'Hit 5×+ on high-risk Plinko {n} times',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -117,6 +130,19 @@ const es: Record<TKey, string> = {
   high: 'ALTO',
   drop: 'LANZAR',
   loading: 'Cargando {name}…',
+  level: 'NIVEL',
+  levelUp: '¡NIVEL {n}!',
+  missions: 'MISIONES',
+  missionComplete: '¡COMPLETADA!',
+  gamiNote: 'Las misiones nunca cambian las probabilidades ni el RTP.',
+  mSpins: 'Juega {n} giros',
+  mBoth: 'Juega a ambos juegos',
+  mWinX: 'Consigue un premio de 10× o más',
+  mDrops: 'Lanza {n} bolas de Plinko',
+  mTumbles: 'Logra 4+ cascadas en un giro, {n} veces',
+  mFreeSpins: 'Activa los giros gratis',
+  mWinSum: 'Gana {n} en total',
+  mPlinkoHigh: 'Consigue 5×+ en Plinko de riesgo alto {n} veces',
 };
 
 const dicts = { en, es } as const;
