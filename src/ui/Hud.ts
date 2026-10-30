@@ -157,6 +157,29 @@ export class Hud extends Container {
     this.balanceValue.text = i18n.fmt(cents);
   }
 
+  /**
+   * Make a credit visible: "+€0.80" floats up off the balance, which pulses
+   * gold. Matters most after a slam-stop, when the count-up is skipped and a
+   * win smaller than the bet would otherwise look like nothing happened.
+   */
+  credit(cents: number) {
+    if (cents <= 0) return;
+    const pop = num(`+${i18n.fmt(cents)}`, 34, 'numGold');
+    pop.position.set(this.balanceValue.x, this.balanceValue.y - 72);
+    pop.alpha = 0;
+    this.bottom.addChild(pop);
+    void this.tweens
+      .to(pop, { alpha: 1, y: pop.y - 20 }, { duration: 180, ease: Ease.quadOut })
+      .then(() => this.tweens.to(pop, { alpha: 0, y: pop.y - 50 }, { duration: 900, delay: 500, ease: Ease.quadIn }))
+      .then(() => pop.destroy());
+    this.tweens.finishAll(this.balanceValue.scale);
+    this.balanceValue.tint = COLORS.gold;
+    void this.tweens
+      .to(this.balanceValue.scale, { x: 1.15, y: 1.15 }, { duration: 120, ease: Ease.quadOut })
+      .then(() => this.tweens.to(this.balanceValue.scale, { x: 1, y: 1 }, { duration: 320, ease: Ease.backOut }))
+      .then(() => (this.balanceValue.tint = 0xffffff));
+  }
+
   setBet(cents: number) {
     this.betValue.text = i18n.fmt(cents);
   }

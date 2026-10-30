@@ -339,6 +339,7 @@ export class PlinkoScene implements Scene {
 
     this.display += round.win;
     this.hud.setBalance(this.display);
+    this.hud.credit(round.win);
     void this.hud.setWin(round.win, 300);
     if (round.win > 0) {
       const pop = num(`+${i18n.fmt(round.win)}`, 34, 'numGold');

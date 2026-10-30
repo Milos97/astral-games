@@ -298,6 +298,7 @@ export class SlotScene implements Scene {
     if (!replay) {
       this.balance = round.balanceAfter;
       this.hud.setBalance(this.balance);
+      this.hud.credit(round.win);
       this.app.server.call('slot.ack', { roundId: round.roundId }).catch(() => {
         /* the round stays pending server-side and replays on next load */
       });
